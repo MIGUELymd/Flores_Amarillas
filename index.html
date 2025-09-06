@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNA FLOR, PARA MI FLOR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            font-family: 'Arial', sans-serif;
+            overflow-x: hidden;
+        }
+        canvas {
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        .controls {
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            position: relative;
+            bottom: 0;
+        }
+        .button-generate {
+            background-color: #ff4500;
+            color: #fff;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .button-generate:hover {
+            background-color: #e63900;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-yellow-400 mb-2">Para el amor de mi vida (KARINA)</h1>
+    </header>
+
+    <canvas id="flowerCanvas" width="800" height="500" class="max-w-full h-auto mt-4"></canvas>
+
+    <div class="controls mt-8 flex justify-center">
+        <div class="text-center">
+            <button id="generateBtn" class="button-generate px-6 py-3 rounded-lg shadow-lg">PRESIONAME</button>
+            <p class="text-sm text-gray-500 mt-4">Amor sé que no es un gran detalle, pero espero que sepas que siempre te voy amar y 
+            hacer pequeños detalles para que sepas lo valiosa que eres, y para mi eres lo mejor que me ha podido pasar en la vida y que también tengas en claro 
+            que cuando nos casemos te voy hacer feliz.</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('flowerCanvas');
+        const ctx = canvas.getContext('2d');
+        const generateBtn = document.getElementById('generateBtn');
+
+        let flowers = [];
+        let particles = [];
+        let texts = [];
+        let isFirstClick = true;
+        const pixelSize = 4;
+        const minDistance = 100; // Minimum distance between flowers
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.originalX = x;
+                this.originalY = y;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.5) * 10;
+                this.color = color;
+                this.life = 60;
+                this.alpha = 1;
+                this.isStable = false;
+            }
+
+            update() {
+                if (!this.isStable) {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.alpha -= 0.02;
+                    this.life--;
+                    if (this.life <= 0) {
+                        this.isStable = true;
+                        this.alpha = 1;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - pixelSize / 2, this.y - pixelSize / 2, pixelSize, pixelSize);
+                ctx.restore();
+            }
+        }
+
+        class Flower {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 60 + 40;
+                this.colors = ['#ffff00', '#ffca00', '#ffd700', '#ffb347'];
+                this.isStable = false;
+                this.opacity = 0;
+                this.explosionDone = false;
+            }
+
+            explode() {
+                if (!this.explosionDone) {
+                    for (let j = 0; j < 20; j++) {
+                        const color = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'][Math.floor(Math.random() * 4)];
+                        particles.push(new Particle(this.x + (Math.random() - 0.5) * this.size, this.y + (Math.random() - 0.5) * this.size, color));
+                    }
+                    this.explosionDone = true;
+                }
+            }
+
+            update() {
+                this.opacity = Math.min(this.opacity + 0.02, 1);
+                if (!this.isStable && this.explosionDone) {
+                    this.x += (Math.random() - 0.5) * 0.5;
+                    this.y += (Math.random() - 0.5) * 0.5;
+                    if (Math.random() > 0.99) this.isStable = true;
+                }
+            }
+
+            draw() {
+                if (this.opacity < 1) return;
+                this.explode();
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.globalAlpha = this.opacity;
+
+                const petalHeight = this.size / 2;
+                const petalWidth = this.size / 4;
+                ctx.fillStyle = this.colors[Math.floor(Math.random() * this.colors.length)];
+                for (let i = 0; i < 6; i++) {
+                    const angle = (Math.PI / 3) * i;
+                    const petalX = Math.cos(angle) * petalWidth;
+                    const petalY = Math.sin(angle) * petalHeight;
+
+                    for (let px = -petalWidth / 2; px < petalWidth / 2; px += pixelSize) {
+                        for (let py = -petalHeight; py < 0; py += pixelSize) {
+                            if (Math.abs(px) < petalWidth / 2 && Math.abs(py) < petalHeight) {
+                                ctx.fillRect(petalX + px, petalY + py, pixelSize, pixelSize);
+                            }
+                        }
+                    }
+                }
+
+                ctx.fillStyle = 'green';
+                for (let s = 0; s < 50; s += pixelSize) {
+                    ctx.fillRect(-pixelSize, this.size + s, pixelSize, pixelSize);
+                }
+
+                ctx.fillStyle = '#ff4500';
+                ctx.fillRect(-pixelSize / 2, -pixelSize / 2, pixelSize, pixelSize);
+
+                ctx.restore();
+            }
+        }
+
+        function isValidPosition(x, y, existingFlowers) {
+            return existingFlowers.every(flower => Math.sqrt((x - flower.x) ** 2 + (y - flower.y) ** 2) > minDistance);
+        }
+
+        function generateFlowers() {
+            const numFlowers = Math.floor(Math.random() * 3) + 3;
+            for (let i = 0; i < numFlowers; i++) {
+                let attempts = 0;
+                let valid = false;
+                let x, y;
+                while (!valid && attempts < 50) {
+                    x = Math.random() * (canvas.width - 200) + 100;
+                    y = Math.random() * (canvas.height - 200) + 100;
+                    valid = isValidPosition(x, y, flowers);
+                    attempts++;
+                }
+                if (valid) {
+                    const flower = new Flower(x, y);
+                    flowers.push(flower);
+                }
+            }
+
+            if (isFirstClick) {
+                const text = "KARINA";
+                const x = canvas.width / 2 - 50;
+                const y = canvas.height / 2;
+                texts.push({ text, x, y });
+                isFirstClick = false;
+                for (let i = 0; i < 10; i++) {
+                    particles.push(new Particle(x + Math.random() * 50 - 25, y, '#ffd700'));
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                if (p.life <= 0 && p.isStable) particles.splice(index, 1);
+            });
+
+            flowers.forEach(flower => {
+                flower.update();
+                flower.draw();
+            });
+
+            texts.forEach(entry => {
+                ctx.save();
+                ctx.translate(entry.x, entry.y);
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '24px Arial';
+                ctx.shadowColor = '#ff4500';
+                ctx.shadowBlur = 10;
+                ctx.fillText(entry.text, 0, 0);
+                ctx.restore();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        generateBtn.addEventListener('click', generateFlowers);
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = container.offsetWidth - 40;
+            const aspectRatio = canvas.width / canvas.height;
+            canvas.width = Math.min(maxWidth, 800);
+            canvas.height = canvas.width / aspectRatio;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        animate();
+    </script>
+</body>
+</html>
+</content>
+</create_file>
